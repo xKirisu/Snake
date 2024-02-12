@@ -1,8 +1,7 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include <fstream>
-#include <algorithm> 
-#include <map>
+
 #define BlockSize 64
 #define WindowSizeX 832
 #define WindowSizeY 896
