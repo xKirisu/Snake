@@ -12,13 +12,14 @@ enum Direction {
     up, down, left, right
 };
 std::string LoadHighScore(std::string path);
+void SaveToFile(std::string, std::string);
 int WinMain()
 {
-   /* std::string highscore = LoadHighScore("save.dat");
-    int hightscore_int = 3;*/
-    //hightscore_int = std::stoi(highscore);
+    std::string highscore = LoadHighScore("save.dat");
+    int highscore_int = std::stoi(highscore);
 
     bool isPlay = true;
+    sf::Mouse mouse;
     sf::RenderWindow window(sf::VideoMode(WindowSizeX, WindowSizeY), "Snake");
 
     //Random
@@ -32,14 +33,11 @@ int WinMain()
     uibakground.setSize(sf::Vector2f(WindowSizeX, UISize));
     uibakground.setPosition(0, WindowSizeY-BlockSize);
 
-    //Reset Button
-    sf::RectangleShape reset_button;
-
     //Text
     sf::Font font;
     font.loadFromFile("font/Roboto-Black.ttf");
 
-    sf::Text text_score_value, text_score, text_highscore, text_highscore_value, text_gameover;
+    sf::Text text_score_value, text_score, text_highscore, text_highscore_value, text_gameover, new_record;
 
         text_gameover.setFont(font);
         text_gameover.setString("Game Over");
@@ -63,8 +61,13 @@ int WinMain()
         text_highscore_value.setFont(font);
         text_highscore_value.setCharacterSize(42);
         text_highscore_value.setPosition(BlockSize * 4.55, WindowSizeY - BlockSize + 4);
+        text_highscore_value.setString(highscore);
 
-        text_highscore_value.setString("123");
+        new_record.setFont(font);
+        new_record.setCharacterSize(32);
+        new_record.setPosition(WindowSizeX / 2 - BlockSize, WindowSizeY / 3 + 96);
+        new_record.setString("new record");
+
     //Head
     sf::RectangleShape head;
     head.setFillColor(sf::Color::Yellow);
@@ -104,10 +107,10 @@ int WinMain()
                 window.close();
 
             if (event.type == sf::Event::KeyPressed) {
-                if (event.key.code == sf::Keyboard::W) if (direction != down)   direction = up;
-                if (event.key.code == sf::Keyboard::S) if (direction != up)     direction = down;
-                if (event.key.code == sf::Keyboard::A) if (direction != right)  direction = left;
-                if (event.key.code == sf::Keyboard::D) if (direction != left)   direction = right;
+                if (event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Up)    if (direction != down)   direction = up;
+                if (event.key.code == sf::Keyboard::S || event.key.code == sf::Keyboard::Down)  if (direction != up)     direction = down;
+                if (event.key.code == sf::Keyboard::A || event.key.code == sf::Keyboard::Left)  if (direction != right)  direction = left;
+                if (event.key.code == sf::Keyboard::D || event.key.code == sf::Keyboard::Right) if (direction != left)   direction = right;
             }
         }
 
@@ -156,13 +159,18 @@ int WinMain()
                 randY = std::rand() % 13;
                 food.setPosition(randX * BlockSize, randY * BlockSize);
 
+                //Food spawn controller
                 bool checkagain = true;
-                for (int i = 0; i < tail_counter; i++) {
-                    if (food.getGlobalBounds().contains(tail[i])) {
-                        randX = std::rand() % 13;
-                        randY = std::rand() % 13;
-                        food.setPosition(randX * BlockSize, randY * BlockSize);
-                        i = 0;
+                while (checkagain) {
+                    checkagain = false;
+                    for (int i = 0; i < tail_counter; i++) {
+                        if (food.getGlobalBounds().contains(sf::Vector2f(tail[i].x+BlockSize/2, tail[i].y+BlockSize/2))) {
+                            randX = std::rand() % 13;
+                            randY = std::rand() % 13;
+                            food.setPosition(randX * BlockSize, randY * BlockSize);
+                            checkagain = true; // Ckeck again
+                            break;
+                        }
                     }
                 }
                 
@@ -194,7 +202,11 @@ int WinMain()
 
         if (!isPlay) {
             window.draw(text_gameover);
-            window.draw(reset_button);
+
+            if (highscore_int < tail_counter - 3) {
+                window.draw(new_record);
+                SaveToFile("save.dat", std::to_string(tail_counter - 3));
+            }
         }
 
         //DrawUI
@@ -211,11 +223,25 @@ int WinMain()
     return 0;
 }
 std::string LoadHighScore(std::string path) {
-    std::ifstream save_file;
+    std::ifstream file;
+    std::string value;
     try {
-        save_file.open(path);
+        file.open(path);
+        if(file >> value)
+            return value;
     }
     catch (const std::exception& e) {
         return e.what();
+    }
+}
+void SaveToFile(std::string path, std::string content) {
+    std::ofstream file;
+
+    try {
+        file.open(path);
+        file << content;
+    }
+    catch (const std::exception& e) {
+        std::cout<<e.what();
     }
 }
